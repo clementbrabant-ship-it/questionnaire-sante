@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Questionnaire de Perception de la Santé — Clement BRABANT</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; color: #222; }
+  .container { max-width: 700px; margin: 0 auto; background: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+  h1 { color: #7B1E2E; font-size: 1.35em; margin-bottom: 4px; }
+  .subtitle { color: #666; font-style: italic; font-size: 0.88em; margin-bottom: 10px; }
+  .instructions { background: #F9F0F2; border-left: 4px solid #7B1E2E; padding: 10px 14px; border-radius: 4px; font-size: 0.88em; color: #444; margin-bottom: 18px; }
+  .fields-row { display: flex; gap: 20px; margin-bottom: 20px; }
+  .field-group { flex: 1; }
+  .field-group label { font-weight: bold; font-size: 0.88em; color: #7B1E2E; display: block; margin-bottom: 4px; }
+  .field-group input { width: 100%; border: none; border-bottom: 2px solid #7B1E2E; padding: 5px 2px; font-size: 0.95em; outline: none; background: transparent; }
+  .legend { display: flex; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8em; color: #555; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+  .question-block { margin-bottom: 18px; border-radius: 8px; overflow: hidden; border: 1px solid #eee; }
+  .question-header { display: flex; align-items: center; background: #F9F0F2; }
+  .question-num { background: #7B1E2E; color: white; font-weight: bold; font-size: 1.1em; min-width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .question-text { padding: 8px 12px; font-weight: bold; font-size: 0.88em; color: #7B1E2E; }
+  .scale-row { display: flex; padding: 12px 10px 6px; gap: 4px; justify-content: space-between; background: white; }
+  .circle-btn { width: 46px; height: 46px; border-radius: 50%; border: 3px solid transparent; font-weight: bold; font-size: 1em; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.15s, box-shadow 0.15s; outline: none; flex-shrink: 0; background: #f5f5f5; color: #333; }
+  .circle-btn:hover { transform: scale(1.12); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .circle-btn.c-rouge  { border-color: #7B1E2E; color: #7B1E2E; }
+  .circle-btn.c-orange { border-color: #C47A1E; color: #C47A1E; }
+  .circle-btn.c-vert   { border-color: #5A7A2A; color: #5A7A2A; }
+  .circle-btn.selected.c-rouge  { background: #7B1E2E; color: white; }
+  .circle-btn.selected.c-orange { background: #C47A1E; color: white; }
+  .circle-btn.selected.c-vert   { background: #5A7A2A; color: white; }
+  .circle-btn.selected { transform: scale(1.15); box-shadow: 0 3px 10px rgba(0,0,0,0.25); }
+  .labels-row { display: flex; justify-content: space-between; padding: 2px 10px 10px; background: white; }
+  .label-bas  { font-size: 0.75em; font-style: italic; color: #7B1E2E; }
+  .label-haut { font-size: 0.75em; font-style: italic; color: #5A7A2A; }
+  .score-section { display: flex; align-items: center; gap: 16px; margin-top: 22px; padding: 14px; background: #f9f9f9; border-radius: 8px; }
+  .score-note { flex: 1; font-size: 0.8em; color: #888; font-style: italic; }
+  .score-box { background: #7B1E2E; color: white; border-radius: 8px; padding: 10px 20px; text-align: center; min-width: 130px; }
+  .score-label { font-size: 0.8em; font-weight: bold; }
+  .score-value { font-size: 1.5em; font-weight: bold; margin-top: 2px; }
+
+  /* Boutons action */
+  .btn-valider {
+    display: block; width: 100%; margin-top: 18px; padding: 14px;
+    background: #7B1E2E; color: white; border: none; border-radius: 8px;
+    font-size: 1em; font-weight: bold; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-valider:hover { background: #5a1520; }
+  .btn-reset { display: block; width: 100%; margin-top: 8px; padding: 10px; background: white; color: #7B1E2E; border: 2px solid #7B1E2E; border-radius: 8px; font-size: 0.9em; cursor: pointer; }
+  .btn-reset:hover { background: #F9F0F2; }
+
+  /* Zone résultat */
+  .result-zone { display: none; margin-top: 20px; }
+  .result-zone .recap-title { color: #7B1E2E; font-weight: bold; font-size: 1em; margin-bottom: 10px; }
+  .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f0e0e3; font-size: 0.84em; }
+  .summary-row:last-child { border-bottom: none; }
+  .badge { font-weight: bold; font-size: 0.95em; padding: 3px 12px; border-radius: 20px; color: white; white-space: nowrap; }
+  .total-bar { margin-top: 12px; background: #7B1E2E; color: white; text-align: center; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 1.1em; }
+
+  /* Boutons PDF + Mail */
+  .action-buttons { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-pdf {
+    flex: 1; padding: 13px; background: #7B1E2E; color: white; border: none;
+    border-radius: 8px; font-size: 0.95em; font-weight: bold; cursor: pointer;
+  }
+  .btn-pdf:hover { background: #5a1520; }
+  .btn-mail {
+    flex: 1; padding: 13px; background: white; color: #7B1E2E;
+    border: 2px solid #7B1E2E; border-radius: 8px; font-size: 0.95em;
+    font-weight: bold; cursor: pointer;
+  }
+  .btn-mail:hover { background: #F9F0F2; }
+
+  .instruc-mail {
+    margin-top: 10px; font-size: 0.8em; color: #888; font-style: italic;
+    text-align: center; background: #fffbe6; border-radius: 6px; padding: 8px;
+    border: 1px solid #f0d060;
+  }
+  .footer { margin-top: 24px; text-align: center; font-size: 0.75em; color: #aaa; font-style: italic; }
+
+  @media (max-width: 500px) {
+    .container { padding: 16px; }
+    .circle-btn { width: 36px; height: 36px; font-size: 0.85em; }
+    .scale-row { gap: 2px; padding: 10px 4px 4px; }
+    .fields-row { flex-direction: column; gap: 12px; }
+    .action-buttons { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>QUESTIONNAIRE DE PERCEPTION DE LA SANTÉ</h1>
+  <div class="subtitle">(adapté du questionnaire de Garnier)</div>
+
+  <div class="instructions">
+    👋 Merci de compléter ce questionnaire avant votre premier rendez-vous.<br>
+    <strong>Cliquez sur le chiffre</strong> qui correspond le mieux à votre situation, puis <strong>téléchargez le PDF</strong> et envoyez-le à votre intervenant.
+  </div>
+
+  <div class="fields-row">
+    <div class="field-group">
+      <label>Nom / Prénom</label>
+      <input type="text" id="patient-nom" placeholder="Votre nom et prénom">
+    </div>
+    <div class="field-group">
+      <label>Date</label>
+      <input type="date" id="patient-date">
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#7B1E2E"></div>1–3 : défavorable</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#C47A1E"></div>4–6 : intermédiaire</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#5A7A2A"></div>7–10 : favorable</div>
+  </div>
+
+  <div id="questions"></div>
+
+  <div class="score-section">
+    <div class="score-note">Score calculé automatiquement au fil de vos réponses.</div>
+    <div class="score-box">
+      <div class="score-label">SCORE GÉNÉRAL</div>
+      <div class="score-value" id="score-display">— / 10</div>
+    </div>
+  </div>
+
+  <button class="btn-valider" onclick="valider()">✅ Valider mes réponses</button>
+  <button class="btn-reset" onclick="resetForm()">🔄 Recommencer</button>
+
+  <!-- Zone résultat -->
+  <div class="result-zone" id="result-zone">
+    <div class="recap-title">📋 Récapitulatif de vos réponses</div>
+    <div id="summary-rows"></div>
+    <div class="total-bar" id="total-bar"></div>
+
+    <button class="btn-pdf" onclick="genererPDF()" style="margin-top:16px">📄 Télécharger le PDF</button>
+    <div class="instruc-mail" style="margin-top:10px">
+      💡 Téléchargez le PDF et envoyez-le par mail à <strong>clement.brabant@gmail.com</strong>
+    </div>
+  </div>
+
+  <div class="footer">
+    Clement BRABANT — Intervenant Prescri'mouv — 06 38 51 45 75 — clement.brabant@gmail.com
+  </div>
+</div>
+
+<script>
+const { jsPDF } = window.jspdf;
+
+const questions = [
+  { num:1, q:"De manière générale, comment estimez-vous votre condition physique actuelle ?", bas:"Très mauvaise", haut:"Excellente" },
+  { num:2, q:"Êtes-vous satisfait(e) de votre poids ?", bas:"Pas du tout", haut:"Extrêmement" },
+  { num:3, q:"Pensez-vous avoir une alimentation équilibrée ?", bas:"Pas du tout", haut:"Extrêmement" },
+  { num:4, q:"Dormez-vous bien la nuit et vous sentez-vous reposé(e) ?", bas:"Je dors très mal", haut:"Je dors très bien" },
+  { num:5, q:"Vous sentez-vous stressé(e) ces temps-ci ?", bas:"Très stressé(e)", haut:"Très détendu(e)" },
+  { num:6, q:"Comment percevez-vous votre niveau général de santé actuellement ?", bas:"Très mauvais", haut:"Très bon" },
+  { num:7, q:"Actuellement, vous sentez-vous isolé(e) socialement ?", bas:"Énormément", haut:"Pas du tout" },
+  { num:8, q:"Avez-vous des difficultés de concentration ?", bas:"Énormément", haut:"Pas du tout" },
+];
+
+const answers = {};
+
+function colorClass(v) { return v<=3?'c-rouge':v<=6?'c-orange':'c-vert'; }
+function hexColor(v)   { return v<=3?'#7B1E2E':v<=6?'#C47A1E':'#5A7A2A'; }
+
+function buildQuestions() {
+  const container = document.getElementById('questions');
+  questions.forEach(({ num, q, bas, haut }) => {
+    const block = document.createElement('div');
+    block.className = 'question-block';
+    block.innerHTML = `
+      <div class="question-header">
+        <div class="question-num">${num}</div>
+        <div class="question-text">${q}</div>
+      </div>
+      <div class="scale-row" id="scale-${num}"></div>
+      <div class="labels-row">
+        <span class="label-bas">${bas}</span>
+        <span class="label-haut">${haut}</span>
+      </div>`;
+    container.appendChild(block);
+    const row = block.querySelector(`#scale-${num}`);
+    for (let v=1; v<=10; v++) {
+      const btn = document.createElement('button');
+      btn.className = `circle-btn ${colorClass(v)}`;
+      btn.textContent = v;
+      btn.onclick = () => selectAnswer(num, v);
+      row.appendChild(btn);
+    }
+  });
+}
+
+function selectAnswer(qNum, val) {
+  answers[qNum] = val;
+  document.getElementById(`scale-${qNum}`).querySelectorAll('.circle-btn').forEach((btn, i) => {
+    btn.classList.toggle('selected', i+1 === val);
+  });
+  updateScore();
+}
+
+function updateScore() {
+  const vals = Object.values(answers);
+  if (!vals.length) { document.getElementById('score-display').textContent = '— / 10'; return; }
+  const avg = (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+  document.getElementById('score-display').textContent = avg + ' / 10';
+}
+
+function getAvg() {
+  const vals = Object.values(answers);
+  return (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+}
+
+function valider() {
+  const nom = document.getElementById('patient-nom').value.trim();
+  const missing = questions.filter(q => !answers[q.num]);
+  if (!nom) { alert('Merci de renseigner votre nom et prénom.'); return; }
+  if (missing.length) { alert(`Merci de répondre à toutes les questions.\nManquantes : ${missing.map(q=>q.num).join(', ')}`); return; }
+
+  // Construire récap HTML
+  const summaryRows = document.getElementById('summary-rows');
+  summaryRows.innerHTML = '';
+  questions.forEach(({ num, q }) => {
+    const val = answers[num];
+    const row = document.createElement('div');
+    row.className = 'summary-row';
+    row.innerHTML = `<span style="flex:1;padding-right:10px">${q}</span>
+      <span class="badge" style="background:${hexColor(val)}">${val} / 10</span>`;
+    summaryRows.appendChild(row);
+  });
+
+  const avg = getAvg();
+  document.getElementById('total-bar').textContent = `Score général : ${avg} / 10`;
+
+  const zone = document.getElementById('result-zone');
+  zone.style.display = 'block';
+  zone.scrollIntoView({ behavior: 'smooth' });
+}
+
+function genererPDF() {
+  const nom = document.getElementById('patient-nom').value.trim();
+  const date = document.getElementById('patient-date').value
+    ? new Date(document.getElementById('patient-date').value).toLocaleDateString('fr-FR')
+    : new Date().toLocaleDateString('fr-FR');
+  const avg = getAvg();
+
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210; const mL = 15; const mR = 15; const usable = W - mL - mR;
+  let y = 20;
+
+  // En-tête
+  doc.setFillColor(123, 30, 46);
+  doc.rect(mL, y, usable, 12, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(12);
+  doc.text('QUESTIONNAIRE DE PERCEPTION DE LA SANTE', W/2, y+8, { align:'center' });
+  y += 16;
+
+  // Sous-titre
+  doc.setTextColor(100,100,100);
+  doc.setFont('helvetica','italic');
+  doc.setFontSize(9);
+  doc.text('(adapte du questionnaire de Garnier)', mL, y);
+  y += 8;
+
+  // Infos patient
+  doc.setFillColor(249,240,242);
+  doc.rect(mL, y, usable, 10, 'F');
+  doc.setTextColor(123,30,46);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(9);
+  doc.text(`Patient : ${nom}`, mL+3, y+4);
+  doc.text(`Date : ${date}`, mL+3, y+8.5);
+  y += 16;
+
+  // Questions
+  questions.forEach(({ num, q }) => {
+    const val = answers[num];
+    const col = val<=3?[123,30,46]:val<=6?[196,122,30]:[90,122,42];
+
+    // Bandeau question
+    doc.setFillColor(249,240,242);
+    doc.rect(mL, y, usable, 9, 'F');
+    doc.setFillColor(123,30,46);
+    doc.rect(mL, y, 10, 9, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.text(String(num), mL+5, y+6.2, { align:'center' });
+    doc.setTextColor(123,30,46);
+    doc.setFontSize(8.5);
+    // Couper la question si trop longue
+    const lines = doc.splitTextToSize(q, usable - 16);
+    doc.text(lines[0], mL+13, y+6);
+    y += 10;
+    if (lines.length > 1) {
+      doc.setFillColor(249,240,242);
+      doc.rect(mL, y-2, usable, 6, 'F');
+      doc.text(lines[1], mL+13, y+2.5);
+      y += 6;
+    }
+
+    // Barre de score visuelle
+    const barW = usable;
+    const cellW = barW / 10;
+    for (let v=1; v<=10; v++) {
+      const cx = mL + (v-1)*cellW;
+      const isSelected = v === val;
+      const c = v<=3?[123,30,46]:v<=6?[196,122,30]:[90,122,42];
+      if (isSelected) {
+        doc.setFillColor(...c);
+        doc.circle(cx + cellW/2, y+4.5, 4.5, 'F');
+        doc.setTextColor(255,255,255);
+      } else {
+        doc.setDrawColor(...c);
+        doc.setLineWidth(0.4);
+        doc.circle(cx + cellW/2, y+4.5, 4, 'S');
+        doc.setTextColor(...c);
+      }
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(7.5);
+      doc.text(String(v), cx + cellW/2, y+6.2, { align:'center' });
+    }
+    y += 12;
+  });
+
+  // Score général
+  y += 4;
+  doc.setFillColor(123,30,46);
+  doc.rect(mL, y, usable, 12, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(12);
+  doc.text(`SCORE GENERAL : ${avg} / 10`, W/2, y+8, { align:'center' });
+  y += 18;
+
+  // Pied de page
+  doc.setTextColor(170,170,170);
+  doc.setFont('helvetica','italic');
+  doc.setFontSize(7.5);
+  doc.text('Clement BRABANT — Intervenant Prescri\'mouv — 06 38 51 45 75 — clement.brabant@gmail.com', W/2, 287, { align:'center' });
+
+  const nomFichier = `Questionnaire_Sante_${nom.replace(/\s+/g,'_')}.pdf`;
+  doc.save(nomFichier);
+}
+
+function ouvrirMail() {
+  const nom = document.getElementById('patient-nom').value.trim();
+  const avg = getAvg();
+  const date = document.getElementById('patient-date').value
+    ? new Date(document.getElementById('patient-date').value).toLocaleDateString('fr-FR')
+    : new Date().toLocaleDateString('fr-FR');
+
+  let body = `Bonjour,\n\nVeuillez trouver ci-joint mon questionnaire de perception de la santé.\n\n`;
+  body += `Patient : ${nom}\nDate : ${date}\n\n`;
+  questions.forEach(({ num, q }) => { body += `Q${num}. ${q}\n   -> ${answers[num]} / 10\n\n`; });
+  body += `Score général : ${avg} / 10\n\n`;
+  body += `Cordialement,\n${nom}`;
+
+  window.location.href = `mailto:clement.brabant@gmail.com?subject=Questionnaire Perception Santé - ${encodeURIComponent(nom)}&body=${encodeURIComponent(body)}`;
+}
+
+function resetForm() {
+  Object.keys(answers).forEach(k => delete answers[k]);
+  document.getElementById('patient-nom').value = '';
+  document.getElementById('patient-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('score-display').textContent = '— / 10';
+  document.getElementById('result-zone').style.display = 'none';
+  document.querySelectorAll('.circle-btn').forEach(b => b.classList.remove('selected'));
+}
+
+document.getElementById('patient-date').value = new Date().toISOString().split('T')[0];
+buildQuestions();
+</script>
+</body>
+</html>
